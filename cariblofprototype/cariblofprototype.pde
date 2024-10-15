@@ -12,7 +12,7 @@ void setup() {
   fullScreen();
   
   // Load song and setup FFT
-  song = new SoundFile(this, "Wonder.mp3");
+  song = new SoundFile(this, "zag2berenstereo.mp3");
   fft = new FFT(this, bands);
   fft.input(song);
   song.play();
