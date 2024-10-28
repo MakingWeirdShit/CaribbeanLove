@@ -17,14 +17,18 @@ float targetGreen = defaultGreen;
 float targetBlue = defaultBlue;
 
 // Easing control
-float easingFactor = 0.09;  // Control how quickly the colors transition
+float easingFactor = 0.07;  // Control how quickly the colors transition
 
 // Thresholds for voice activity
-int lowThreshold = 12;  // Minimum amplitude for response
-int highThreshold = 85; // Maximum amplitude for response
-int recentAmplitudes[70] = {0}; // Array to hold recent amplitude values
+const int lowThreshold = 22;  // Minimum amplitude for response
+const int highThreshold = 85; // Maximum amplitude for response
+const int amplitudeArrayLength = 20; // Use a constant for the array length
+int recentAmplitudes[amplitudeArrayLength] = {0}; // Array to hold recent amplitude values
 int index = 0; // Index for the recent amplitudes
 int minAmplitude = 255; // Minimum amplitude seen in recent history
+
+// Fade control
+float fadeFactor = 0.015; // Control how quickly to fade down
 
 void setup() {
     Serial.begin(9600);  
@@ -38,11 +42,11 @@ void loop() {
 
         // Update recent amplitudes array and find minimum amplitude
         recentAmplitudes[index] = amplitude;
-        index = (index + 1) % 10; // Loop through the array
+        index = (index + 1) % amplitudeArrayLength; // Loop through the array
         minAmplitude = recentAmplitudes[0];
 
         // Calculate the minimum amplitude from the recent values
-        for (int i = 1; i < 10; i++) {
+        for (int i = 1; i < amplitudeArrayLength; i++) {
             if (recentAmplitudes[i] < minAmplitude) {
                 minAmplitude = recentAmplitudes[i];
             }
@@ -62,6 +66,14 @@ void loop() {
             leds[i].r = ease(leds[i].r, targetRed);
             leds[i].g = ease(leds[i].g, targetGreen);
             leds[i].b = ease(leds[i].b, targetBlue);
+
+            // Implement fade effect when approaching white
+            if (leds[i].r > 240 && leds[i].g > 240 && leds[i].b > 240) {
+                // Slowly fade down the colors
+                leds[i].r -= fadeFactor * (leds[i].r - defaultRed);
+                leds[i].g -= fadeFactor * (leds[i].g - defaultGreen);
+                leds[i].b -= fadeFactor * (leds[i].b - defaultBlue);
+            }
         }
         
         FastLED.show();
