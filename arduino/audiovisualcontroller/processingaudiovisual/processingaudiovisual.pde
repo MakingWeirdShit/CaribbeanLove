@@ -7,6 +7,8 @@ Serial myPort;
 
 int numLeds = 50;             // Number of LEDs
 float amplitude = 0;           // Audio amplitude
+float smoothedAmplitude = 0;   // Smoothed amplitude for reduced jitter
+float smoothFactor = 0.1;      // Smoothing factor (higher is smoother but less responsive)
 color[] ledColors = new color[numLeds];  // Array to hold each LED's color
 
 void setup() {
@@ -36,11 +38,28 @@ void draw() {
   // Analyze the current amplitude
   amplitude = amp.analyze() * 255;  // Scale to 0-255 for LED brightness
   
-  // Set LED colors based on amplitude
+  // Apply exponential smoothing to reduce jitter
+  smoothedAmplitude += (amplitude - smoothedAmplitude) * smoothFactor;
+  
+  // Set LED colors based on smoothed amplitude with different effects
   for (int i = 0; i < numLeds; i++) {
-    int redVal = int(amplitude);                // Red based on amplitude
-    int blueVal = 255 - int(amplitude);         // Blue is the inverse
-    ledColors[i] = color(redVal, 0, blueVal);   // Assign color for each "LED"
+    int redVal, blueVal;
+    
+    //// Fluctuate only certain LEDs at low amplitude levels
+    //if (i % 3 == 0 && smoothedAmplitude < 100) {
+    //  redVal = int(smoothedAmplitude / 1.5);
+    //  blueVal = 255 - int(smoothedAmplitude / 1.5);
+    //} else if (i % 2 == 0 && smoothedAmplitude > 100) {
+    //  // Brighter and more reactive for certain LEDs above threshold
+    //  redVal = int(smoothedAmplitude);
+    //  blueVal = 255 - int(smoothedAmplitude);
+    //} else {
+      // Default subtle glow for all LEDs
+      redVal = int(smoothedAmplitude * 0.5);
+      blueVal = 255 - int(smoothedAmplitude * 0.5);
+    
+
+    ledColors[i] = color(redVal, smoothedAmplitude, blueVal);  // Assign color for each "LED"
   }
   
   // Draw the LED strip visualization
@@ -50,10 +69,10 @@ void draw() {
     rect(i * ledSize, height / 2 - ledSize / 2, ledSize, ledSize);  // Draw LED square
   }
   
-  // Send amplitude data to Arduino (if serial connection is open)
+  // Send the smoothed amplitude data to Arduino as a single byte
   if (myPort != null) {
-    int ledValue = int(constrain(amplitude, 0, 255));  // Constrain to 0-255 range
-    myPort.write(ledValue);  // Send the amplitude value as a single byte
+    int ledValue = int(constrain(smoothedAmplitude, 0, 255));  // Constrain to 0-255 range
+    myPort.write(ledValue);  // Send the smoothed amplitude value
   }
 }
 
