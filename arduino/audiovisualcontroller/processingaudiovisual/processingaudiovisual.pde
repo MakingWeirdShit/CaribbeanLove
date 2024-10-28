@@ -72,6 +72,7 @@ void draw() {
   // Send the smoothed amplitude data to Arduino as a single byte
   if (myPort != null) {
     int ledValue = int(constrain(smoothedAmplitude, 0, 255));  // Constrain to 0-255 range
+    println(smoothedAmplitude);
     myPort.write(ledValue);  // Send the smoothed amplitude value
   }
 }
